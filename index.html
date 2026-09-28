@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Erik Tadeo Barretero Hernández</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background-color: #f0f2f5;
+            margin: 0;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .sudoku-container {
+            display: grid;
+            grid-template-columns: repeat(9, 45px);
+            grid-template-rows: repeat(9, 45px);
+            gap: 1px;
+            background-color: #333;
+            border: 3px solid #000;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+        }
+
+        .cell {
+            width: 45px;
+            height: 45px;
+            background-color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        /* Destacar los bloques de 3x3 */
+        .cell:nth-child(3n) {
+            border-right: 2px solid #000;
+        }
+
+        .cell:nth-child(9n) {
+            border-right: none;
+        }
+
+        .row-3, .row-6 {
+            border-bottom: 2px solid #000;
+        }
+
+        /* Diferenciar números iniciales de los resueltos */
+        .initial {
+            background-color: #e9ecef;
+            color: #000;
+        }
+
+        .solved {
+            color: #007bff;
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        .controls {
+            margin-top: 20px;
+        }
+
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            font-weight: bold;
+            color: #fff;
+            background-color: #28a745;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        button:hover {
+            background-color: #218838;
+        }
+
+        button:disabled {
+            background-color: #6c757d;
+            cursor: not-allowed;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.8); }
+            to { opacity: 1; transform: scale(1); }
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Erik Tadeo Barretero Hernández</h1>
+
+    <div class="sudoku-container" id="grid"></div>
+
+    <div class="controls">
+        <button id="solve-btn" onclick="resolverSudokuUI()">Resolver Sudoku</button>
+    </div>
+
+    <script>
+        // Tablero del Sudoku (0 representa casilla vacía)
+        const tableroInicial = [
+            [5, 3, 0, 0, 7, 0, 0, 0, 0],
+            [6, 0, 0, 1, 9, 5, 0, 0, 0],
+            [0, 9, 8, 0, 0, 0, 0, 6, 0],
+            [8, 0, 0, 0, 6, 0, 0, 0, 3],
+            [4, 0, 0, 8, 0, 3, 0, 0, 1],
+            [7, 0, 0, 0, 2, 0, 0, 0, 6],
+            [0, 6, 0, 0, 0, 0, 2, 8, 0],
+            [0, 0, 0, 4, 1, 9, 0, 0, 5],
+            [0, 0, 0, 0, 8, 0, 0, 7, 9]
+        ];
+
+        // Copia para manipular en la solución
+        let tablero = JSON.parse(JSON.stringify(tableroInicial));
+
+        // Renderizar tablero en el HTML
+        function crearTableroUI() {
+            const grid = document.getElementById('grid');
+            grid.innerHTML = '';
+
+            for (let fila = 0; fila < 9; fila++) {
+                for (let col = 0; col < 9; col++) {
+                    const cell = document.createElement('div');
+                    cell.classList.add('cell');
+                    cell.id = `cell-${fila}-${col}`;
+
+                    if (fila === 2 || fila === 5) {
+                        cell.classList.add(`row-${fila + 1}`);
+                    }
+
+                    const valor = tableroInicial[fila][col];
+                    if (valor !== 0) {
+                        cell.textContent = valor;
+                        cell.classList.add('initial');
+                    }
+
+                    grid.appendChild(cell);
+                }
+            }
+        }
+
+        // Lógica de backtracking en JS
+        function esValido(tab, fila, col, num) {
+            for (let x = 0; x < 9; x++) {
+                if (tab[fila][x] === num || tab[x][col] === num) {
+                    return false;
+                }
+            }
+
+            const inicioFila = fila - (fila % 3);
+            const inicioCol = col - (col % 3);
+
+            for (let i = 0; i < 3; i++) {
+                for (let j = 0; j < 3; j++) {
+                    if (tab[i + inicioFila][j + inicioCol] === num) {
+                        return false;
+                    }
+                }
+            }
+            return true;
+        }
+
+        function resolverSudoku(tab) {
+            for (let fila = 0; fila < 9; fila++) {
+                for (let col = 0; col < 9; col++) {
+                    if (tab[fila][col] === 0) {
+                        for (let num = 1; num <= 9; num++) {
+                            if (esValido(tab, fila, col, num)) {
+                                tab[fila][col] = num;
+                                if (resolverSudoku(tab)) {
+                                    return true;
+                                }
+                                tab[fila][col] = 0;
+                            }
+                        }
+                        return false;
+                    }
+                }
+            }
+            return true;
+        }
+
+        // Función ejecutada por el botón para mostrar los resultados en pantalla
+        function resolverSudokuUI() {
+            if (resolverSudoku(tablero)) {
+                for (let fila = 0; fila < 9; fila++) {
+                    for (let col = 0; col < 9; col++) {
+                        if (tableroInicial[fila][col] === 0) {
+                            const cell = document.getElementById(`cell-${fila}-${col}`);
+                            cell.textContent = tablero[fila][col];
+                            cell.classList.add('solved');
+                        }
+                    }
+                }
+                document.getElementById('solve-btn').disabled = true;
+            } else {
+                alert("No se encontró solución para el Sudoku.");
+            }
+        }
+
+        // Inicializar tablero al cargar la página
+        crearTableroUI();
+    </script>
+</body>
+</html>
